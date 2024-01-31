@@ -19,22 +19,22 @@ body {
   --text-color: white;
   --bg-color: #18181b;
   --info-color :linear-gradient(
-    225deg,
-    rgba(115,42, 209, 1) 0%,
-    rgba(40, 10, 100, 1) 100%
+    180deg,
+    #501919 0%,
+    rgba(10, 10, 10, 1) 100%
 	);
   --p1-score-bg-color: linear-gradient(
-    135deg,
-    rgba(255, 120, 100, 1) 0%,
-    rgba(115, 42, 209, 1) 100%
+    180deg,
+    #501919 0%,
+    rgba(10, 10, 10, 1) 100%
   );
   --p2-score-bg-color: linear-gradient(
-    225deg,
-    rgba(60, 150, 255, 1) 0%,
-    rgba(115, 42, 209, 1) 100%
+    180deg,
+    #501919 0%,
+    rgba(10, 10, 10, 1) 100%
   );
-  --p1-sponsor-color: #ff7a6d;
-  --p2-sponsor-color: #29b6f6;
+  --p1-sponsor-color: green;
+  --p2-sponsor-color: green;
   --p1-score-color: white;
   --p2-score-color: white;
 } 
@@ -125,11 +125,11 @@ body {
 
 .logo {
   position: absolute;
-  top: 19px;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 91px;
-  height: 91px;
+  width: 160px;
+  height: 90px;
   background-image: url("logo.png");
   background-size: contain;
   background-repeat: no-repeat;
@@ -138,15 +138,15 @@ body {
   z-index: 9;
 }
 
-/* Name a PNG image tournament_logo.png to have it be displayed at the bottom center */
+/* Name a PNG image pbds_logo.png to have it be displayed at the bottom center */
 .tournament_logo {
   position: absolute;
-  bottom: 32px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  width: 268px;
-  height: 162px;
-  background-image: url("./tournament_logo.png");
+  width: 276px;
+  height: 121px;
+  background-image: url("./pbds_logo.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -368,7 +368,7 @@ body {
   background: rgba(0, 0, 0, 0);
 }
 
-.bottom_container {
+/* .bottom_container {
   display: flex;
   position: absolute;
   bottom: 8px;
@@ -378,9 +378,9 @@ body {
   transform: translateX(-50%);
   width: 360px;
   height: 36px;
-}
+} */
 
-/* .bottom_container {
+.bottom_container {
   position: absolute;
   top: 5px;
   height: 30px;
@@ -391,7 +391,7 @@ body {
   align-content: center;
   justify-content: left;
   background: rgba(0, 0, 0, 0);
-} */
+}
 
 .tournament_container {
   transform: skew(-20deg);
