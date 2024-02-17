@@ -141,7 +141,7 @@ body {
 /* Name a PNG image tournament_logo.png to have it be displayed at the bottom center */
 .tournament_logo {
   position: absolute;
-  bottom: 32px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
   width: 268px;
