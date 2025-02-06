@@ -41,6 +41,10 @@ class WebServer(QThread):
         )
         self.host_name = "0.0.0.0"
         self.port = 5000
+        
+    @app.route('/program-state')
+    def program_state():
+        return WebServer.actions.program_state()
 
     @socketio.on('connect')
     def ws_connect(message):
@@ -380,6 +384,16 @@ class WebServer(QThread):
     @socketio.on('get_sets')
     def ws_get_sets(message):
         emit('get_sets', WebServer.actions.get_sets(orjson.loads(message)))
+        
+    # Loads info on a match
+    @app.route('/get-match-<setId>')
+    def get_match(setId):
+        return WebServer.actions.get_match(setId)
+
+    @socketio.on('get_match')
+    def ws_get_match(message):
+        info = orjson.loads(message)
+        emit('get_match', WebServer.actions.get_match(info.get("setId")))
 
     # Get the commentators
     @app.route('/get-comms')
@@ -448,13 +462,22 @@ class WebServer(QThread):
         emit('load_player_from_tag', WebServer.actions.load_player_from_tag(
             scoreboardNumber, html.unescape(args.get('tag')), team, player, no_mains))
 
+    # Update bracket
+    @app.route('/set-tournament')
+    def set_tournament():
+        return WebServer.actions.load_tournament(request.args.get('url'))
+
+    @socketio.on('set_tournament')
+    def ws_set_tournament(message):
+        emit('set_tournament', WebServer.actions.load_tournament(request.args.get('url')))
+
     @app.route('/', defaults=dict(filename=None))
     @app.route('/<path:filename>', methods=['GET', 'POST'])
     @cross_origin()
     def test(filename):
         try:
             filename = filename or 'stage_strike_app/build/index.html'
-            return send_from_directory(os.path.abspath("."), filename, as_attachment=filename.endswith(".gz"))
+            return send_from_directory(os.path.abspath('.'), filename, as_attachment=filename.endswith('.gz'))
         except Exception as e:
             logger.error(f"File not found: {e}")
 

@@ -6,6 +6,8 @@ from qtpy.QtWidgets import *
 import requests
 import os
 import traceback
+
+from .TSHDirHelper import TSHResolve
 from .TSHDictHelper import deep_get
 from ..TournamentDataProvider import TournamentDataProvider
 from .TSHLocaleHelper import TSHLocaleHelper
@@ -34,25 +36,22 @@ class TSHCountryHelper(QObject):
         class DownloaderThread(QThread):
             def run(self):
                 try:
-                    url = 'https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/master/countries%2Bstates%2Bcities.json'
+                    url = 'https://raw.githubusercontent.com/dr5hn/countries-states-cities-database/refs/heads/master/json/countries%2Bstates%2Bcities.json'
                     r = requests.get(url, allow_redirects=True)
+                    tmp_file = TSHResolve(
+                        './assets/countries+states+cities.json.tmp')
 
-                    open(
-                        './assets/countries+states+cities.json.tmp',
-                        'wb'
-                    ).write(r.content)
+                    with open(tmp_file, 'wb') as f:
+                        f.write(r.content)
 
                     try:
                         # Test if downloaded JSON is valid
-                        json.load(
-                            open('./assets/countries+states+cities.json.tmp'))
+                        json.load(open(tmp_file))
 
                         # Remove old file, overwrite with new one
                         os.remove('./assets/countries+states+cities.json')
-                        os.rename(
-                            './assets/countries+states+cities.json.tmp',
-                            './assets/countries+states+cities.json'
-                        )
+                        os.rename(tmp_file,
+                                  './assets/countries+states+cities.json')
 
                         logger.info("Countries file updated")
                         TSHCountryHelper.LoadCountries()
@@ -60,7 +59,7 @@ class TSHCountryHelper(QObject):
                         logger.error("Countries files download failed")
                 except Exception as e:
                     logger.error(
-                        "Could not update /assets/countries+states+cities.json: "+str(e))
+                        "Could not update countries+states+cities.json: "+str(e))
         downloaderThread = DownloaderThread(self)
         downloaderThread.start()
 
@@ -127,12 +126,16 @@ class TSHCountryHelper(QObject):
                 }
 
                 for s in c.get("states", []):
+                    if s.get("state_code") is None:
+                        continue
+
                     scode = s.get("state_code") if not s.get("state_code").isdigit() else "".join([
-                        word[0] for word in re.split(r'\s+|-', s.get("name"))])
+                        word[0] for word in re.split(r'\s+|-', s.get("name").strip()) if len(word) > 0])
 
                     TSHCountryHelper.countries[c["iso2"]]["states"][s["state_code"]] = {
                         "name": s.get("name"),
                         "code": scode,
+                        "original_code": s.get("state_code"),
                         "latitude": s.get("latitude"),
                         "longitude": s.get("longitude"),
                     }
@@ -209,6 +212,8 @@ class TSHCountryHelper(QObject):
         # Normalize parts of city string
         split = city.replace(" - ", ",").split(",")
 
+        logger.debug(f"Finding State from city string [{city}]")
+
         for part in split[::-1]:
             part = part.strip()
 
@@ -224,7 +229,9 @@ class TSHCountryHelper(QObject):
                     None
                 )
             if state is not None:
-                return state["code"]
+                logger.debug(
+                    f"State was explicit: [{city}] -> [{part}] = {state}")
+                return state["original_code"]
 
         # No, so get by City
         for part in split[::-1]:
@@ -234,6 +241,7 @@ class TSHCountryHelper(QObject):
                 TSHCountryHelper.remove_accents_lower(part), None)
 
             if state is not None:
+                logger.debug(f"Got state from city name: [{city}] -> [{part}] = {state}")
                 return state
 
         return None

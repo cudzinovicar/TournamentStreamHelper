@@ -32,7 +32,10 @@ tested_assets = {
     "sfalpha2": ["base_files/icon"],
     "sfalpha3": ["base_files/icon", "full"],
     "cvs2": ["base_files/icon"],
-    "svc": ["base_files/icon"]
+    "svc": ["base_files/icon"],
+    "mvc2": ["full"],
+    "p4au": ["full", "top8"],
+    "mriv": ["full"],
 }
 
 main_out_path = "../out/test"

@@ -15,6 +15,7 @@ from .SettingsManager import *
 from .TSHGameAssetManager import *
 from .Workers import Worker
 from .Helpers.TSHDictHelper import deep_get, deep_set
+from .Helpers.TSHDirHelper import TSHResolve
 
 
 class PreviewWidget(QWidget):
@@ -81,7 +82,7 @@ class TSHThumbnailSettingsWidget(QDockWidget):
         self.setWidget(self.widget)
         self.widget.setLayout(QVBoxLayout())
 
-        self.settings = uic.loadUi("src/layout/TSHThumbnailSettings.ui")
+        self.settings = uic.loadUi(TSHResolve("src/layout/TSHThumbnailSettings.ui"))
         self.widget.layout().addWidget(self.settings)
 
         # SET DEFAULTS
@@ -278,8 +279,7 @@ class TSHThumbnailSettingsWidget(QDockWidget):
         self.zoom.valueChanged.connect(lambda:
                                        TSHThumbnailSettingsWidget.SaveSettings(
                                            self,
-                                           key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                                               'codename')}.zoom",
+                                           key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.zoom",
                                            val=self.zoom.value(),
                                            generatePreview=True
                                        )
@@ -288,8 +288,7 @@ class TSHThumbnailSettingsWidget(QDockWidget):
         self.horizontalAlign.valueChanged.connect(lambda val: [
             TSHThumbnailSettingsWidget.SaveSettings(
                 self,
-                key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                    'codename')}.align.horizontal",
+                key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.align.horizontal",
                 val=val,
                 generatePreview=True
             )]
@@ -298,8 +297,7 @@ class TSHThumbnailSettingsWidget(QDockWidget):
         self.verticalAlign.valueChanged.connect(lambda val: [
             TSHThumbnailSettingsWidget.SaveSettings(
                 self,
-                key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                    'codename')}.align.vertical",
+                key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.align.vertical",
                 val=val,
                 generatePreview=True
             )]
@@ -308,8 +306,7 @@ class TSHThumbnailSettingsWidget(QDockWidget):
         self.scaleToFillX.stateChanged.connect(lambda val: [
             TSHThumbnailSettingsWidget.SaveSettings(
                 self,
-                key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                    'codename')}.scaleFillX",
+                key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.scaleFillX",
                 val=self.scaleToFillX.isChecked(),
                 generatePreview=True
             )]
@@ -318,8 +315,7 @@ class TSHThumbnailSettingsWidget(QDockWidget):
         self.scaleToFillY.stateChanged.connect(lambda val: [
             TSHThumbnailSettingsWidget.SaveSettings(
                 self,
-                key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                    'codename')}.scaleFillY",
+                key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.scaleFillY",
                 val=self.scaleToFillY.isChecked(),
                 generatePreview=True
             )]
@@ -328,8 +324,7 @@ class TSHThumbnailSettingsWidget(QDockWidget):
         self.proportionalScaling.stateChanged.connect(lambda val: [
             TSHThumbnailSettingsWidget.SaveSettings(
                 self,
-                key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                    'codename')}.proportionalScaling",
+                key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.proportionalScaling",
                 val=self.proportionalScaling.isChecked(),
                 generatePreview=True
             )]
@@ -338,38 +333,34 @@ class TSHThumbnailSettingsWidget(QDockWidget):
         self.hideSeparators.stateChanged.connect(lambda val: [
             TSHThumbnailSettingsWidget.SaveSettings(
                 self,
-                key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                    'codename')}.hideSeparators",
+                key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.hideSeparators",
                 val=self.hideSeparators.isChecked(),
                 generatePreview=True
             )]
         )
 
         self.noSeparatorAngle.valueChanged.connect(lambda:
-                                                   TSHThumbnailSettingsWidget.SaveSettings(
-                                                       self,
-                                                       key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                                                           'codename')}.noSeparatorAngle",
-                                                       val=self.noSeparatorAngle.value(),
-                                                       generatePreview=True
-                                                   )
-                                                   )
+            TSHThumbnailSettingsWidget.SaveSettings(
+                self,
+                key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.noSeparatorAngle",
+                val=self.noSeparatorAngle.value(),
+                generatePreview=True
+            )
+        )
 
         self.noSeparatorDistance.valueChanged.connect(lambda:
-                                                      TSHThumbnailSettingsWidget.SaveSettings(
-                                                          self,
-                                                          key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                                                              'codename')}.noSeparatorDistance",
-                                                          val=self.noSeparatorDistance.value(),
-                                                          generatePreview=True
-                                                      )
-                                                      )
+            TSHThumbnailSettingsWidget.SaveSettings(
+                self,
+                key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.noSeparatorDistance",
+                val=self.noSeparatorDistance.value(),
+                generatePreview=True
+            )
+        )
 
         self.flipSeparators.stateChanged.connect(lambda val: [
             TSHThumbnailSettingsWidget.SaveSettings(
                 self,
-                key=f"game.{TSHGameAssetManager.instance.selectedGame.get(
-                    'codename')}.flipSeparators",
+                key=f"game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.flipSeparators",
                 val=self.flipSeparators.isChecked(),
                 generatePreview=True
             )]
@@ -517,8 +508,7 @@ class TSHThumbnailSettingsWidget(QDockWidget):
 
         self.selectRenderType.currentIndexChanged.connect(lambda: [
             SettingsManager.Set(
-                f"thumbnail_config.game.{
-                    TSHGameAssetManager.instance.selectedGame.get('codename')}.asset_pack",
+                f"thumbnail_config.game.{TSHGameAssetManager.instance.selectedGame.get('codename')}.asset_pack",
                 self.selectRenderType.currentData()
             ),
             self.updateFromSettings(),
@@ -527,7 +517,7 @@ class TSHThumbnailSettingsWidget(QDockWidget):
 
         self.GeneratePreview()
 
-        tmp_path = "./tmp/thumbnail"
+        tmp_path = TSHResolve("tmp/thumbnail")
         tmp_file = f"{tmp_path}/template.jpg"
         Path(tmp_path).mkdir(parents=True, exist_ok=True)
 

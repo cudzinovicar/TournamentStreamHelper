@@ -11,6 +11,7 @@ from .TSHGameAssetManager import TSHGameAssetManager
 from .TSHPlayerDB import TSHPlayerDB
 from .TSHTournamentDataProvider import TSHTournamentDataProvider
 from .Helpers.TSHLocaleHelper import TSHLocaleHelper
+from .Helpers.TSHDirHelper import TSHResolve
 from .Workers import Worker
 import threading
 import copy
@@ -51,7 +52,7 @@ class TSHScoreboardPlayerWidget(QGroupBox):
 
         self.losers = False
 
-        uic.loadUi("src/layout/TSHScoreboardPlayer.ui", self)
+        uic.loadUi(TSHResolve("src/layout/TSHScoreboardPlayer.ui"), self)
 
         self.character_container = self.findChild(QWidget, "characters")
 
@@ -157,8 +158,10 @@ class TSHScoreboardPlayerWidget(QGroupBox):
                         processed_line = l.replace("\n", "").strip()
                         if processed_line and processed_line not in self.pronoun_list:
                             self.pronoun_list.append(processed_line)
+            except FileNotFoundError:
+                with open('./user_data/pronouns_list.txt', 'w') as f:
+                    logger.info('creating ./user_data/pronouns_list.txt')
             except Exception as e:
-                logger.error(f"ERROR: Did not find {file}")
                 logger.error(traceback.format_exc())
         self.pronoun_model = QStringListModel()
         self.pronoun_completer.setModel(self.pronoun_model)
@@ -582,6 +585,8 @@ class TSHScoreboardPlayerWidget(QGroupBox):
         self.dataLock.acquire()
         StateManager.BlockSaving()
 
+        logger.debug(f"Setting data for {self.path}: {data}")
+
         try:
             if clear:
                 self.Clear(no_mains=no_mains)
@@ -599,7 +604,8 @@ class TSHScoreboardPlayerWidget(QGroupBox):
                         "prefix")+" "+item.get("gamerTag") if item.get("prefix") else item.get("gamerTag")
 
                     if tag == dbTag:
-                        self.SetData(item, dontLoadFromDB=True, clear=False, no_mains=no_mains)
+                        self.SetData(item, dontLoadFromDB=True,
+                                     clear=False, no_mains=no_mains)
                         break
 
             name = self.findChild(QWidget, "name")
@@ -670,7 +676,7 @@ class TSHScoreboardPlayerWidget(QGroupBox):
                 for i in range(stateElement.model().rowCount()):
                     item = stateElement.model().item(i).data(Qt.ItemDataRole.UserRole)
                     if item:
-                        if data.get("state_code") == item.get("code"):
+                        if data.get("state_code") == item.get("original_code"):
                             stateIndex = i
                             break
                 if stateElement.currentIndex() != stateIndex:
@@ -807,7 +813,7 @@ class TSHScoreboardPlayerWidget(QGroupBox):
                     c.editingFinished.emit()
 
             for c in self.findChildren(QComboBox):
-                if(no_mains):
+                if (no_mains):
                     for charelem in self.character_elements:
                         for i in range(len(charelem)):
                             if charelem[i] == c:

@@ -9,8 +9,11 @@ query SetQuery($id: ID!) {
             isOnline
         }
         fullRoundText
+        round
         state
         totalGames
+        entrant1Score
+        entrant2Score
         slots {
             entrant {
                 id
@@ -84,6 +87,10 @@ query SetQuery($id: ID!) {
                 }
             }
             displayIdentifier
+        }
+        stream {
+            streamName
+            streamSource
         }
     }
 }

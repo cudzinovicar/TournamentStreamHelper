@@ -4,6 +4,7 @@ import os
 import traceback
 import re
 import orjson
+import time
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from qtpy.QtCore import *
@@ -48,7 +49,7 @@ class ChallongeDataProvider(TournamentDataProvider):
     def __init__(self, url, threadpool, parent) -> None:
         super().__init__(url, threadpool, parent)
         self.name = "Challonge"
-        max_iter = 10
+        max_iter = 150  # Empyrical limit to cover for a low probability of actually initializing the scraper
         i, initialized = 0, False
         while not initialized and i < max_iter:
             if i > 0:
@@ -60,13 +61,18 @@ class ChallongeDataProvider(TournamentDataProvider):
                     'platform': 'windows',
                     'mobile': False
                 })
-                self.scraper.get(f"https://challonge.com/")
-                initialized = True
+                data = self.scraper.get(f"https://challonge.com/games.json")
+                if data.status_code == 200 and "application/json" in data.headers.get("content-type"):
+                    initialized = True
+                else:
+                    i += 1
             except cloudscraper.exceptions.CloudflareException as e:
                 i += 1
                 if i >= max_iter:
                     raise e
                     # TODO: Find a way to open a warning box and unload tournament if failed
+            if not initialized:
+                time.sleep(0.2)
 
     def GetSlug(self):
         # URL with language
@@ -94,7 +100,7 @@ class ChallongeDataProvider(TournamentDataProvider):
         prefix = self.GetCommunityPrefix()
         if prefix:
             prefix = prefix+"."
-        return f"https://{prefix}challonge.com/{self.GetSlug()}"
+        return f"https://{prefix}challonge.com/en/{self.GetSlug()}"
 
     def GetTournamentData(self, progress_callback=None, cancel_event=None):
         finalData = {}
@@ -127,8 +133,7 @@ class ChallongeDataProvider(TournamentDataProvider):
                     finalData["startAt"] = dateutil.parser.parse(
                         dateElement.get("text"), fuzzy=True).timestamp()
             except Exception as e:
-                logger.error(f"Could not get tournament date: {
-                             traceback.format_exc()}")
+                logger.error(f"Could not get tournament date: {traceback.format_exc()}")
 
             participantsElement = next(
                 (d for d in details if d.get("icon") == "fa fa-users"), None)
@@ -211,7 +216,7 @@ class ChallongeDataProvider(TournamentDataProvider):
                     "id": station.get("id"),
                     "type": "station",
                     "identifier": station.get("name"),
-                    "stream": station.get("stream_url")
+                    "stream": self.ConvertStreamUrl(station.get("stream_url"))
                 })
 
             return final_data
@@ -596,10 +601,16 @@ class ChallongeDataProvider(TournamentDataProvider):
                                 "losers_round").format(abs(match.get("round")))
 
                         # For final rounds in group, use "Qualifier"
-                        if int(match.get("round")) in [maxRoundNumber, minRoundNumber]:
+                        indicator = "qualifier_winners_indicator"
 
+                        if int(match.get("round")) < 0:
+                            indicator = "qualifier_losers_indicator"
+
+                        indicator = TSHLocaleHelper.matchNames.get(indicator)
+
+                        if int(match.get("round")) in [maxRoundNumber, minRoundNumber]:
                             match["round_name"] = TSHLocaleHelper.matchNames.get("qualifier").format(
-                                self.CleanInputString(TSHLocaleHelper.phaseNames.get("final_stage")))
+                                self.CleanInputString(TSHLocaleHelper.phaseNames.get("final_stage")), indicator)
                             match["winnerProgression"] = TSHLocaleHelper.phaseNames.get(
                                 "final_stage")
 
@@ -607,8 +618,13 @@ class ChallongeDataProvider(TournamentDataProvider):
 
         return all_matches
 
+    def GetStreamQueue(self, progress_callback=None, cancel_event=None):
+        return {}
+
     def GetStreamMatchId(self, streamName):
         sets = self.GetMatches()
+
+        logger.debug(sets)
 
         streamSet = next(
             (s for s in sets if s.get("stream", None) ==
@@ -617,6 +633,28 @@ class ChallongeDataProvider(TournamentDataProvider):
         )
 
         return streamSet
+
+    def GetStationMatchsId(self, stationId):
+        sets = []
+
+        try:
+            sets = [s for s in self.GetMatches() if s.get("station_id")
+                    == stationId]
+
+            logger.debug(stationId)
+            logger.debug(f"Station sets: {len(sets)}")
+
+            queued_sets = [s for s in self.GetMatches() if s.get("station_id_queued")
+                           == stationId]
+
+            sets = sets + queued_sets
+        except Exception as e:
+            logger.error(traceback.format_exc())
+
+        return sets
+
+    def GetFutureMatchesList(self, setsId, progress_callback, cancel_event):
+        return setsId
 
     def GetUserMatchId(self, user):
         sets = self.GetMatches()
@@ -674,8 +712,7 @@ class ChallongeDataProvider(TournamentDataProvider):
                 match, "queued_for_station.stream_url", None)
 
         if stream:
-            if "twitch.tv" in stream:
-                stream = stream.split("twitch.tv/")[1].replace("/", "")
+            stream = self.ConvertStreamUrl(stream)
 
         team1losers = False
         team2losers = False
@@ -722,8 +759,10 @@ class ChallongeDataProvider(TournamentDataProvider):
                 self.ParseEntrant(deep_get(match, "player1")).get("players"),
                 self.ParseEntrant(deep_get(match, "player2")).get("players"),
             ],
-            "stream": deep_get(match, "station.stream_url", None),
+            "stream": stream,
             "station": deep_get(match, "station.name", None),
+            "station_id": deep_get(match, "station.id", None),
+            "station_id_queued": deep_get(match, "queued_for_station.id", None),
             "is_current_stream_game": True if deep_get(match, "station.stream_url", None) else False,
             "team1score": scores[0],
             "team2score": scores[1],
